@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chatbot</title>
+    <style>
+            @font-face {
+        font-family: 'Pixelify Sans';
+        src: url('PixelifySans-VariableFont_wght.ttf');
+        font-weight: 100 900;
+      }
+      :root {
+        --gb-lightest: #e8f5c8;   
+        --gb-light:    #b8d888;   
+        --gb-mid:      #7ab048;   
+        --gb-dark:     #3a6820;   
+        --gb-bg:       #f0f8d8;   
+        --gb-text:     #2a4a10;   
+      }
+      body{
+        font-family: 'Pixelify Sans', monospace;
+        background-color: var(--gb-bg);
+        margin: 0;
+        image-rendering: pixelated;
+      }
+      .send-button{
+          font-family: 'Pixelify Sans', monospace;
+          font-size: 16px;
+          color: var(--gb-lightest);
+          background-color: var(--gb-mid);
+          border: none;
+          padding: 10px 20px;
+          margin-left: 10px;
+          cursor: pointer;
+          position: relative;
+          border-radius: 6px;
+          box-shadow:
+            inset 0 3px 0 0 var(--gb-light),
+            inset 0 -3px 0 0 var(--gb-dark),
+            inset 3px 0 0 0 var(--gb-light),
+            inset -3px 0 0 0 var(--gb-dark),
+            0 3px 0 0 var(--gb-dark);
+      }
+      .send-button:hover {
+        background-color: var(--gb-light);
+        transform: translateY(1px);
+        box-shadow:
+          inset 0 3px 0 0 var(--gb-lightest),
+          inset 0 -2px 0 0 var(--gb-dark),
+          inset 3px 0 0 0 var(--gb-lightest),
+          inset -3px 0 0 0 var(--gb-dark),
+          0 2px 0 0 var(--gb-dark);
+      }
+      .send-button:active {
+        transform: translateY(3px);
+        box-shadow:
+          inset 0 2px 0 0 var(--gb-mid),
+          inset 0 -1px 0 0 var(--gb-dark),
+          inset 2px 0 0 0 var(--gb-mid),
+          inset -2px 0 0 0 var(--gb-dark),
+          0 0px 0 0 var(--gb-dark);
+      }
+      .input-bar{
+        font-family: 'Pixelify Sans', monospace;
+        font-size: 16px;
+        padding: 10px 14px;
+        border: 3px solid var(--gb-dark);
+        border-radius: 6px;
+        background-color: var(--gb-lightest);
+        color: var(--gb-text);
+        flex-grow: 1;
+        outline: none;
+        box-shadow: inset 2px 2px 0 0 var(--gb-light);
+
+      }
+      .input-bar:focus {
+        border-color: var(--gb-mid);
+        background-color: #ffffff;
+      }
+      .chat-input{
+        display: grid;
+        grid-template-columns: 1fr auto;
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: var(--gb-light);
+        border-top: 3px solid var(--gb-dark);
+
+      }
+      .app-conatiner{
+        max-width: 600px;
+        margin: 0 auto;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        border: 3px solid var(--gb-dark);
+        background-color: var(--gb-bg);
+      }
+      .chat-user{
+        display:flex;
+        justify-content: end;
+        align-items: start;
+        margin: 8px 10px;
+      }
+      .chat-bot{
+        display:flex;
+        align-items:start;
+        margin: 8px 10px;
+      }
+      .chat-message-text{
+        background-color: var(--gb-lightest);
+        border: 2px solid var(--gb-dark);
+        padding: 10px 14px;
+        border-radius: 4px;
+        max-width: 300px;
+        margin: 0;
+        overflow-wrap: break-word;
+        color: var(--gb-text);
+        font-size: 16px;
+        box-shadow: 3px 3px 0px var(--gb-mid);
+
+      }
+      .chat-user .chat-message-text {
+        background-color: var(--gb-light);
+      }
+      .chat-messages-container{
+        flex-grow: 1;
+        margin-top: 20px;
+        overflow: scroll;
+        scrollbar-width: none;
+
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="js-container"></div>
+
+    <script src="https://unpkg.com/supersimpledev/react.js"></script>
+    <script src="https://unpkg.com/supersimpledev/react-dom.js"></script>
+    <script src="https://unpkg.com/supersimpledev/dayjs.js"></script>
+    <script src="https://unpkg.com/supersimpledev/chatbot.js"></script>
+    <script src="https://unpkg.com/supersimpledev/babel.js"></script>
+    <script type="text/babel"> 
+    function Chatinput({chatmessages,setchatmessages}){
+      const [inputtext, setinputText] = React.useState('')
+      function saveinputtext(event){
+         setinputText(event.target.value)
+      }
+      function sendmessage(){
+        const newChatmessages = [
+          ...chatmessages,
+          {
+            message: inputtext,
+            sender: 'user',
+            id: crypto.randomUUID()
+          }
+      ];
+      setchatmessages(newChatmessages);
+      const response = Chatbot.getResponse(inputtext);
+      setchatmessages([
+          ...newChatmessages,
+          {
+            message: response,
+            sender: 'bot',
+            id: crypto.randomUUID()
+          }
+        ])
+      setinputText('');
+    }
+      return (
+        <div class="chat-input">
+          <input placeholder="Send Message to Chatbot" size="30" onChange={saveinputtext}
+          value={inputtext}
+          className="input-bar" />
+          <button  className="send-button" onClick={sendmessage}>Send</button>
+        </div>
+
+      )
+    }
+    function Chatmessage(props){
+      //const message = props.message;
+      //const sender =props.sender;
+      const {message ,sender} = props ;
+      /*if(sender ==="user"){
+            return(
+            <div>
+              {message}
+              <img src="user.jpg" width="50" />
+
+            </div>
+
+          )
+        }*/
+        return(
+            <div className={
+              sender==='user' 
+              ? 'chat-user' : 
+              'chat-bot'}>
+              {sender === "bot" && <img  src="bot.png" width="50" />}
+              <div className = "chat-message-text">
+              {message}
+              </div>
+              {sender ==="user" && <img src="user.png" width="50" /> }
+
+
+            </div>
+
+          )
+
+      }
+    function ChatMessages({chatmessages}){
+      const chatMessagesRef = React.useRef(null);
+      React.useEffect(() =>{
+        const containerelem = chatMessagesRef;
+        if(containerelem){
+          containerelem.scrollTop = containerelem.scrollHeight;
+        }
+
+      },[chatmessages])
+      return(
+        <div 
+        className="chat-messages-container"
+        ref={chatMessagesRef}>
+        {chatmessages.map((chatmessage) => {
+        return (
+          <Chatmessage
+            message={chatmessage.message}
+            sender={chatmessage.sender}
+            key = {chatmessage.id}
+          />
+        )
+
+      })}
+      </div>
+      )
+
+    }
+    
+    function App(){
+      const [chatmessages,setchatmessages] = React.useState( [{
+            message: 'hello chatbot',
+            sender: 'user',
+            id: 'id1'
+          },{
+            message: 'Hello ! how can i help?',
+            sender: 'bot',
+            id: 'id2'
+      }]);
+
+      return(
+        <div className="app-conatiner">
+        <ChatMessages chatmessages={chatmessages}/>
+        <Chatinput chatmessages={chatmessages} setchatmessages={setchatmessages}/>
+      </div>
+
+      )
+
+    }
+    const container = document.querySelector('.js-container');
+    ReactDOM.createRoot(container).render(<App />);
+
+
+    </script>
+  </body>
+</html>
