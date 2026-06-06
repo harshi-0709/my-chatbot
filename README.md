@@ -13,7 +13,7 @@ A pixel art themed AI chatbot built with HTML, CSS and React, powered by Groq's 
 
 ---
 
-## What You Learned
+## What I Learned
 
 ### React
 - How components work (`App`, `ChatMessages`, `Chatmessage`, `Chatinput`)
