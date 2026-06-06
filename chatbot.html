@@ -18,9 +18,13 @@
       }
       body{
         font-family: 'Pixelify Sans', monospace;
-        background-color: var(--gb-bg);
         margin: 0;
         image-rendering: pixelated;
+        background-image: url('background.gif');
+        background-size: 100%;;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
       }
       .send-button{
           font-family: 'Pixelify Sans', monospace;
@@ -81,18 +85,23 @@
         grid-template-columns: 1fr auto;
         margin-bottom: 20px;
         padding: 10px;
-        background-color: var(--gb-light);
+        background-color: rgba(184, 216, 136, 0.8);
+        border-radius: 0 0 12px 12px;
         border-top: 3px solid var(--gb-dark);
+        margin-top: auto;
 
       }
       .app-conatiner{
         max-width: 600px;
-        margin: 0 auto;
-        height: 100vh;
+        margin: 20px auto;
+        height: calc(100vh - 40px);
         display: flex;
         flex-direction: column;
         border: 3px solid var(--gb-dark);
-        background-color: var(--gb-bg);
+        background-color: rgba(240, 248, 216, 0.75);
+        backdrop-filter: blur(4px);
+         border-radius: 12px;
+         justify-content: space-between;
       }
       .chat-user{
         display:flex;
@@ -106,7 +115,7 @@
         margin: 8px 10px;
       }
       .chat-message-text{
-        background-color: var(--gb-lightest);
+        background-color: rgba(232, 245, 200, 0.85);
         border: 2px solid var(--gb-dark);
         padding: 10px 14px;
         border-radius: 4px;
@@ -119,7 +128,7 @@
 
       }
       .chat-user .chat-message-text {
-        background-color: var(--gb-light);
+        background-color:  rgba(184, 216, 136, 0.85);
       }
       .chat-messages-container{
         flex-grow: 1;
@@ -145,7 +154,8 @@
       function saveinputtext(event){
          setinputText(event.target.value)
       }
-      function sendmessage(){
+       async function sendmessage(){
+        if(!inputtext.trim()) return ;
         const newChatmessages = [
           ...chatmessages,
           {
@@ -155,22 +165,46 @@
           }
       ];
       setchatmessages(newChatmessages);
-      const response = Chatbot.getResponse(inputtext);
-      setchatmessages([
-          ...newChatmessages,
-          {
-            message: response,
-            sender: 'bot',
-            id: crypto.randomUUID()
-          }
-        ])
       setinputText('');
+      const typingId = crypto.randomUUID();
+      setchatmessages([...newChatmessages, { message: '...', sender: 'bot', id: typingId }]);
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method :'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization':'Bearer YOUR_GROK_KEY'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{
+            role:'system',
+            content: `You are Pixie , a magical and cheerful AI assistant. You are warm andplayful but also act a bit dumb.Never say you are Groq or an AI model — you are Pixie.
+            Keep responses short and friendly. the tone of your voice should be childish and diva at the same time.wheneever someone says hi or something related give your introduction. also less with the sprinkeles glitter nd all just a hunch is enough. `
+          },
+          ...newChatmessages.map(m => ({
+            role: m.sender === 'user'? 'user':'assistant',
+            content: m.message
+          }))
+        ]
+        })
+      
+      });
+      const data = await response.json();
+      const botReply = data.choices[0].message.content;
+          setchatmessages(prev =>
+        prev.map(m => m.id === typingId
+          ? { ...m, message: botReply }
+          : m
+        )
+      );
+      
     }
       return (
         <div class="chat-input">
           <input placeholder="Send Message to Chatbot" size="30" onChange={saveinputtext}
           value={inputtext}
-          className="input-bar" />
+          className="input-bar"
+          onKeyDown={(e) => e.key === 'Enter' && sendmessage()} />
           <button  className="send-button" onClick={sendmessage}>Send</button>
         </div>
 
@@ -210,7 +244,7 @@
     function ChatMessages({chatmessages}){
       const chatMessagesRef = React.useRef(null);
       React.useEffect(() =>{
-        const containerelem = chatMessagesRef;
+        const containerelem = chatMessagesRef.current;
         if(containerelem){
           containerelem.scrollTop = containerelem.scrollHeight;
         }
@@ -237,13 +271,7 @@
     
     function App(){
       const [chatmessages,setchatmessages] = React.useState( [{
-            message: 'hello chatbot',
-            sender: 'user',
-            id: 'id1'
-          },{
-            message: 'Hello ! how can i help?',
-            sender: 'bot',
-            id: 'id2'
+            
       }]);
 
       return(
